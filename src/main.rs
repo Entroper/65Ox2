@@ -1,8 +1,9 @@
 use std::error::Error;
 use std::fs::File;
-use std::io::{prelude::*, BufReader};
+use std::io::{BufReader, BufRead};
 use std::env;
-use std::collections::HashMap;
+
+mod assembler;
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut args = env::args();
@@ -14,42 +15,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let file = File::open(filename)?;
 	let reader = BufReader::new(file);
 
-	let mut code_address = 0;
-	let mut labels = HashMap::new();
-	for line in reader.lines() {
-		let line = line?;
-		// Strip out comments.
-		let line = match line.find(";") {
-			Some(pos) => &line[..pos],
-			None => line.as_str()
-		};
+	let mut assembler = assembler::Assembler::new();
+	assembler.assemble(reader.lines())?;
 
-		// Split on whitespace.
-		let tokens = &mut line.split_whitespace();
-		let next = tokens.next();
-		if next.is_none() {
-			continue;
-		}
-
-		// Do we have a label?
-		let mut instruction = next.unwrap();
-		if instruction.ends_with(":") {
-			labels.insert(instruction.to_string(), code_address);
-			let next = tokens.next();
-			if next.is_none() {
-				continue;
-			}
-			instruction = next.unwrap();
-		}
-
-		if instruction == "LDA" {
-			code_address = code_address + 1;
-		}
-	}
-
-	for label in labels.keys() {
-		println!("{} {}", label, labels.get(label).unwrap());
+	for label in assembler.labels.keys() {
+		println!("{} {}", label, assembler.labels.get(label).unwrap());
 	}
 
 	Ok(())
 }
+
