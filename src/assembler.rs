@@ -1,7 +1,6 @@
 use std::error::Error;
+use std::io::Error as IoError;
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{Lines, BufReader};
 
 pub struct Assembler {
 	pub labels: HashMap<String, u32>,
@@ -16,7 +15,7 @@ impl Assembler {
 		}
 	}
 
-	pub fn assemble(&mut self, lines: Lines<BufReader<File>>) -> Result<(), Box<dyn Error>> {
+	pub fn assemble(&mut self, lines: impl Iterator<Item = Result<String, IoError>>) -> Result<(), Box<dyn Error>> {
 		let mut code_address = 0;
 		for line in lines {
 			let line = line?;
@@ -43,7 +42,12 @@ impl Assembler {
 				let name = &line[..assign_index];
 				let expression = &line[(assign_index+1)..];
 				let value = Self::evaluate_expression(expression);
-				self.variables.insert(name.to_string(), value);
+				if let Some(value) = value {
+					self.variables.insert(name.to_string(), value);
+				}
+				else {
+					return Err("Could not evaluate right side of assignment".into());
+				}
 				
 				continue;
 			}
@@ -73,13 +77,15 @@ impl Assembler {
 			let _instruction = &line[..3];
 			let expression = &line[3..];
 			let parameter = Self::evaluate_expression(expression);
-			code_address = code_address + if parameter > 0xFF { 2 } else { 1 };
+			if let Some(parameter) = parameter {
+				code_address = code_address + if parameter > 0xFF { 2 } else { 1 };
+			}
 		}	
 
 		Ok(())
 	}
 
-	fn evaluate_expression(_expression: &str) -> u16 {
-		0
+	fn evaluate_expression(_expression: &str) -> Option<u16> {
+		Some(0)
 	}	
 }
