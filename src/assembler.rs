@@ -1,5 +1,4 @@
-use std::error::Error;
-use std::io::Error as IoError;
+use std::io::{Error, ErrorKind};
 use std::collections::HashMap;
 
 pub struct Assembler {
@@ -15,7 +14,9 @@ impl Assembler {
 		}
 	}
 
-	pub fn assemble(&mut self, lines: impl Iterator<Item = Result<String, IoError>>) -> Result<(), Box<dyn Error>> {
+	pub fn assemble<T>(&mut self, lines: T) -> Result<(), Error>
+	where T: Iterator<Item = Result<String, Error>>
+	{
 		let mut code_address = 0;
 		for line in lines {
 			let line = line?;
@@ -46,7 +47,7 @@ impl Assembler {
 					self.variables.insert(name.to_string(), value);
 				}
 				else {
-					return Err("Could not evaluate right side of assignment".into());
+					return Err(Error::new(ErrorKind::InvalidInput, "Could not evaluate right side of assignment"));
 				}
 				
 				continue;
