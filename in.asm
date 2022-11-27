@@ -1,3 +1,20 @@
+;; variables.asm
+unsram          = $6000  ; $400 bytes
+
+ch_stats        = unsram + $0100  ; MUST be on page bound.  Each character allowed $40 bytes, so use 00,40,80,C0 to index ch_stats
+ch_class        = ch_stats + $00
+ch_weapons      = ch_stats + $18  ; 4
+ch_level        = ch_stats + $26        ; OB this is 0 based, IB this is 1 based
+
+ch_substats     = ch_stats + $20
+ch_dmg          = ch_substats + $00
+ch_absorb       = ch_substats + $02
+
+lvlup_chstats       = $86       ; 2 byte pointer to character's OB stats
+
+CLS_BB  = $02
+CLS_MA  = $08
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;  LvlUp_AdjustBBSubStats  [$9966 :: 0x2D976]
@@ -39,7 +56,7 @@ LvlUp_AdjustBBSubStats:
     STA (lvlup_chstats), Y          ;   This should only happen if the character has no ARMOR equipped.
                                     ;   Weapons shouldn't matter.  This cannot be easily fixed here,
                                     ;   as you'd pretty much have to write a new routine.
-    ASL A
+    ASL
     LDY #ch_dmg - ch_stats          ; Damage = 2*Level
     STA (lvlup_chstats), Y
     RTS

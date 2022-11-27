@@ -6,6 +6,10 @@ use std::env;
 mod assembler;
 
 fn main() -> Result<(), Box<dyn Error>> {
+	assemble()
+}
+
+fn assemble() -> Result<(), Box<dyn Error>> {
 	let mut args = env::args();
 	if args.len() != 2 {
 		return Err("Usage: assembler <input file>".into());
@@ -18,10 +22,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let mut assembler = assembler::Assembler::new();
 	assembler.assemble(reader.lines())?;
 
+	for variable in assembler.variables.keys() {
+		let value = assembler.variables.get(variable).unwrap();
+		println!("{variable} ${value:0>4X}");
+	}
 	for label in assembler.labels.keys() {
-		println!("{} {}", label, assembler.labels.get(label).unwrap());
+		let value = assembler.labels.get(label).unwrap();
+		println!("{label} ${value:0>4X}");
 	}
 
 	Ok(())
 }
-
